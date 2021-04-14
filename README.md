@@ -34,94 +34,79 @@ Regulatory elements are hypothezied to play an important role in individual resp
 
 2. Preparation of the input files
 
-PERD applies a computational model, NetOpen, to predict the openness value for regulatory elements before/after drug treatment, then treats the regulatory elements that display the significantly different openness value after drug treatment as the drug responsive elements. The training data for build the NetOpen model came from RNA-seq and DNase-seq data in ENCODE 167 cells, which can be download from [ENCODE-training-data](https://github.com/WeiqiangZhou/BIRD-data/releases/download/v3.0/BIRD_data_ENCODE.zip).
+PERD applies a computational model, NetOpen, to predict the openness value for regulatory elements before/after drug treatment, then treats the regulatory elements that display the significantly different openness value after drug treatment as the drug responsive elements. The training data for build the NetOpen model came from RNA-seq and DNase-seq data in ENCODE 167 cells, which can be download from [ENCODE-training-data](https://github.com/WeiqiangZhou/BIRD-data/releases/download/v3.0/BIRD_data_ENCODE.zip). Put the RNA_data and DNase_data in PERD folder. The nearby genes for enhancers came form GeneCard sub-package GeenHancer (GeneHancer_version_4_4), which can be find in PERD repository. 
+    
+   - Preparing training data
+    
+    > DNase_167_cells <- readRDS("~/PERD/ENCODE-training-data/DNase_data_167_cells.rds")
+    > RNA_167_cells <- readRDS("~/PERD/ENCODE-training-data/RNA_data_167_cells.rds")
+    > library("OrganismDbi")
+    > library("org.Hs.eg.db")
+    > ensembleIDs<-sapply(1:length(strsplit(rownames(RNA_167_cells),"[.]")),function(x) strsplit(rownames(RNA_167_cells),"[.]")[[x]][1])
+    > gene_symbol <- select(org.Hs.eg.db,keys = ensembleIDs,columns = "SYMBOL",keytype = "ENSEMBL")
+    > RNAdata_trn<-RNA_167_cells
+    > RNAdata.gene<-gene_symbol$SYMBOL[match(ensembleIDs,gene_symbol$ENSEMBL)]
+    > rownames(RNAdata_trn)<-RNAdata.gene
+    
+    > GeneHancer_version_4_4 <- read_excel("~/Documents/Drug responsive regulator elements/GeneHancer/GeneHancer_version_4-4.xlsx")
+    > A<-strsplit(GeneHancer_version_4_4$attributes,";")
+    > enhancer_gene_list<-lapply(1:nrow(GeneHancer_version_4_4),function(x) sapply(seq(2,length(A[[x]]),2),function(y) substr(A[[x]][y],16,nchar(A[[x]][y]))))
+    > names(enhancer_gene_list)<-paste(GeneHancer_version_4_4$chrom,paste(GeneHancer_version_4_4$start,GeneHancer_version_4_4$end,sep = "-"),sep = ":")
 
-              A1BG A1CF  A2M …
-    201T       0     0    0
-    22RV1      0     1    0
-    42-MG-BA   0     0    1
-      .
-      .
-      .
+    > enhancer.withOpen.lab<-lapply(1:nrow(GeneHancer_version_4_4),function(x) which(DNase_167_cells$chromosome == GeneHancer_version_4_4$chrom[x] & DNase_167_cells$start>=GeneHancer_version_4_4$start[x] & DNase_167_cells$end<=GeneHancer_version_4_4$end[x]))
+    > len<-sapply(1:length(enhancer.withOpen.lab),function(x) length(enhancer.withOpen.lab[[x]]))
+    > GeneHancer_info<-GeneHancer_version_4_4[which(len!=0),]
+    > enhancer.withOpen.lab1<-enhancer.withOpen.lab[which(len!=0)]
+    #prepare the openness for enhancers in GeneHancer
+    > DNase_data<-data.matrix(DNase_167_cells[,-c(1,2,3)])
+    > rownames(DNase_data)<-paste(DNase_167_cells$chromosome,paste(DNase_167_cells$start,DNase_167_cells$end,sep = "-"),sep = ":")
+    > enhancer.withOpen.openness<-NULL
+    # calculate the openness for enhancers by find the locus with maximun openness
+    for (i in 1:length(enhancer.withOpen.lab1)) {
+    m<-DNase_data[enhancer.withOpen.lab1[[i]],]
+    if (length(m)==ncol(DNase_data)) {enhancer.withOpen.openness<-rbind(enhancer.withOpen.openness,m)} else {enhancer.withOpen.openness<-rbind(enhancer.withOpen.openness,apply(m,2,max))}
+    rm(m)
+    #cat(i,"\n")
+    }
+    > rownames(enhancer.withOpen.openness)<-paste(GeneHancer_info$chrom,paste(GeneHancer_info$start,GeneHancer_info$end,sep = "-"),sep = ":")
+    
+    # prepare the target gene list
+    > enhancer_gene_list_open<-enhancer_gene_list[rownames(enhancer.withOpen.openness)]
+    # preparing the binding TF list
+    # The example TFBS information cames from ENCODE chip-seq data, which can be obtained in PERD repository
+    > library(readr)
+    > tfbsInfo <- read_delim("~/Documents/openness/human/tfbsregion/tfbsInfo.txt", 
+                       +     "\t", escape_double = FALSE, col_names = FALSE, 
+                       +     trim_ws = TRUE)
+    > tfbs_info<-tfbsInfo[-c(1,2),]
+    > TFgene<-sapply(1:length(strsplit(tfbs_info$description," ")),function(x) strsplit(tfbs_info$description," ")[[x]][1])
+    > enhancer.withOpen.TFlab<-lapply(1:nrow(enhancer.withOpen.openness),function(x) which(tfbs_info$chrom==GeneHancer_info$chrom[x] & tfbs_info$start>=GeneHancer_info$start[x] & tfbs_info$end<=GeneHancer_info$end[x]))
+    > len.t<-sapply(1:length(enhancer.withOpen.TFlab),function(x) length(enhancer.withOpen.TFlab[[x]]))
+    > enhancer.withOpen.TFlab1<-enhancer.withOpen.TFlab[which(len.t!=0)]
+    > GeneHancer_info1<-GeneHancer_info[which(len.t!=0),]
+    > enhancer.withOpen.lab2<-enhancer.withOpen.lab1[which(len.t!=0)]
+    > enhancer.withOpen.TG.list<-enhancer_gene_list[which(len.t!=0)]
+    > enhancer.withOpen.openness1<-enhancer.withOpen.openness[which(len.t!=0),]
+    > enhancer.withOpen.TFgene<-lapply(1:length(enhancer.withOpen.lab2),function(x) unique(TFgene[enhancer.withOpen.TFlab1[[x]]]))
+    > enhancer.withOpen.TF.list<-lapply(1:length(enhancer.withOpen.lab2),function(x) intersect(enhancer.withOpen.TFgene[[x]],rownames(RNAdata)))
 
-Similarly, the input files that contain the copy number alteration data (CN.csv), the status of DNA methylation (methylation.csv), and the gene expression of the cancer cells (expression.csv) are also data matrices with a row representing a cancer cell line and a column representing a gene. The elements of these matrices are respectively integers for gene copy numbers, and float numbers for level of gene methylation and expression.
 
-expression.csv
-
-               A1BG   A1CF    A2M …
-    201T      3.162   2.919   3.379
-    22RV1     3.531   6.336   5.331
-    42-MG-BA  6.002   3.137   3.237
-      .
-      .
-      .
-
-The input file chem.csv that describes the chemical properties of the cancer drugs is a matrix with each row representing one cancer drug and each column representing one feature to describe drug’s chemical properties. The descriptors of the chemical properties of a cancer drug were inferred from its chemical structure. Particularly, to describe a drug, such as Erlotinib, we will need to first download the sdf file of this drug from PubChem, and then upload the chemical structure into “StarVue” (StarVue-macinstall-1.4.dmg) software to extract the 2D Molecular Operating Environment (MOE)) descriptors, including physical properties, atom counts, and bond counts.
-
-chem.csv
-
-              PUBCHEM_MOLECULAR_WEIGHT   PUBCHEM_EXACT_MASS    PUBCHEM_CACTVS_TPSA …
-    Erlotinib            393.4                   393.2                  74.4
-    Rapamycin            917.2                   913.6                  195.0
-    Sunitinib            398.5                   398.2                  77.2
-       .
-       .
-       .
-
-
-The input file DT.csv includes the known targeting proteins of the cancer drugs. Each row represents one cancer drug, and each column represents a target protein. “1” indicates a potential drug-gene interaction reported in DrugBank or KEGG.
-
-DT.csv
-
-                         EGFR                     KIT                   PDGRA …
-    Erlotinib            393.4                   393.2                  74.4
-    Rapamycin            917.2                   913.6                  195.0
-    Sunitinib            398.5                   398.2                  77.2
-       .
-       .
-       .
-
-The example of all input files can be found in the “data” folder of the Github repository.
-
-3. Running DeepDRK
+3. Running PERD
 
 The main function of DeepDRK is DeepDRKpredictor.R. Get your input files prepared, and run it like this:
 
 Usage example:
+    
+    # using NetOpen to predict the enhancers' openness value
+    > load("~/PERD/example-Roadmap-data-netopen.RData") #load the training RData
+    > source('~/DeepDRK/netopen.R')
+    > preEopen<-netopen(enhancer.withOpen.TG.list,enhancer.withOpen.TF.list,enhancer.withOpen.openness.train2,RNAdata.train,RNAdata.test)
+    
+    # using PERD to predict drug responsive enhancers
+    > load("~/PERD/example-CMAP-data-PERD.RData") #load the training RData
+    > source('~/DeepDRK/perd.R')
+    > diffEn<-perd(enhancerGeneList_withTGexp_test2,enhancerList_withTGexp_TFexp_test2,enhancer.withOpen.openness.train1,RNAdata,drug_with10_binary_GEmat,drug_with10_binary_instance_info)
 
-    > cell_tst<-list()
-    > library(readr)
-    > mutation <- read_csv("~/DeepDRK/data/mutation.csv");A<-data.matrix(mutation[,-1]);rownames(A)<-mutation$X1;cell_tst[[1]]<-A
-    > CN <- read_csv("~/DeepDRK/data/CN.csv");A<-data.matrix(CN[,-1]);rownames(A)<- CN$X1;cell_tst[[2]]<-A
-    > Methy <- read_csv("~/DeepDRK/data/methylation.csv");A<-data.matrix(Methy[,-1]);rownames(A)<- Methy$X1;cell_tst[[3]]<-A
-    > Exp <- read_csv("~/DeepDRK/data/expression.csv");A<-data.matrix(Exp[,-1]);rownames(A)<- Exp$X1;cell_tst[[4]]<-A
-    > drug_tst<-list()
-    > chem <- read_csv("~/DeepDRK/data/chem.csv");A<-data.matrix(chem[,-1]);rownames(A)<- chem$X1;drug_tst[[1]]<-A
-    > DT <- read_csv("~/DeepDRK/data/DT.csv");A<-data.matrix(DT[,-1]);rownames(A)<- DT$X1;drug_tst[[2]]<-A
-    > load("~/DeepDRK/combination_data.RData") #load the training RData
-    > source('~/DeepDRK/DeepDRKpredictor.R')
-    > predictions<-DeepDRKpredictor(cell_tst,drug_tst)
-     Are you sure you want to shutdown the H2O instance running at http://localhost:54321/ (Y/N)? y
-     TRUE
-
-Moreover, DeepDRK could also handle task with missing features using the DeepDRKpredictor.e R function. Here is the example showing how to use it:
-
-In case the mutation, methylation and target proteins are missing
-
-    > cell_tst<-list()
-    > library(readr)
-    > CN <- read_csv("~/DeepDRK/data/CN.csv");A<-data.matrix(CN[,-1]);rownames(A)<- CN$X1;cell_tst[[2]]<-A
-    > Exp <- read_csv("~/DeepDRK/data/expression.csv");A<-data.matrix(Exp[,-1]);rownames(A)<- Exp$X1;cell_tst[[4]]<-A
-    > drug_tst<-list()
-    > chem <- read_csv("~/DeepDRK/data/chem.csv");A<-data.matrix(chem[,-1]);rownames(A)<- chem$X1;drug_tst[[1]]<-A
-    > drug_tst[[2]]<-matrix()
-    > missCtype=c(1,3)
-    > missDtype=2
-    > load("~/DeepDRK/combination_data.RData") #load the training RData
-    > source('~/DeepDRK/DeepDRKpredictor.e.R')
-    > predictions<-DeepDRKpredictor.e(cell_tst,drug_tst,missCtype,missDtype)        
-    Are you sure you want to shutdown the H2O instance running at http://localhost:54321/ (Y/N)? y
-    TRUE
 
 
 # Contact
