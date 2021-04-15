@@ -23,7 +23,7 @@ Regulatory elements are hypothezied to play an important role in individual resp
 
     - step 1: git clone https://github.com/wangyc82/PERD;
 
-    - step 2: download the example data (example-Roadmap-data-netopen.RData,example-CMAP-data-PERD.RData) from https://wanglab.shinyapps.io/DeepDRK/, and put it in the PERD folder.
+    - step 2: download the example data (example-Roadmap-data-netopen.RData,example-CMAP-data-PERD.RData) from https://onedrive.live.com/?id=20874D8228EBFF1E%21106&cid=20874D8228EBFF1E, and put it in the PERD folder.
 
     Dependencies of DeepDRK includes the following: 
 
@@ -34,7 +34,7 @@ Regulatory elements are hypothezied to play an important role in individual resp
 
 2. Preparation of the input files
 
-PERD applies a computational model, NetOpen, to predict the openness value for regulatory elements before/after drug treatment, then treats the regulatory elements that display the significantly different openness value after drug treatment as the drug responsive elements. The training data for build the NetOpen model came from RNA-seq and DNase-seq data in ENCODE 167 cells, which can be download from [ENCODE-training-data](https://github.com/WeiqiangZhou/BIRD-data/releases/download/v3.0/BIRD_data_ENCODE.zip). Put the RNA_data and DNase_data in PERD folder. The nearby genes for enhancers came form GeneCard sub-package GeenHancer (GeneHancer_version_4_4), which can be find in PERD repository. 
+PERD applies a computational model, NetOpen, to predict the openness value for regulatory elements before/after drug treatment, then treats the regulatory elements that display the significantly different openness value after drug treatment as the drug responsive elements. The training data for build the NetOpen model came from RNA-seq and DNase-seq data in ENCODE 167 cells, which can be download from [ENCODE-training-data](https://github.com/WeiqiangZhou/BIRD-data/releases/download/v3.0/BIRD_data_ENCODE.zip). Put the RNA_data and DNase_data in PERD folder. The nearby genes for enhancers came form GeneCard sub-package GeenHancer (GeneHancer_version_4_4), which can be find in PERD repository. The TFs that are located in the enhancer region came from ENCODE Chip-seq data and were summarized in [tfbd_info](https://onedrive.live.com/?id=20874D8228EBFF1E%21106&cid=20874D8228EBFF1E)
     
    - Preparing training data
     
