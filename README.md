@@ -23,7 +23,7 @@ Regulatory elements are hypothezied to play an important role in individual resp
 
     - step 1: git clone https://github.com/wangyc82/PERD;
 
-    - step 2: download the example data (example-Roadmap-data-netopen.RData,example-CMAP-data-PERD.RData) from https://onedrive.live.com/?id=20874D8228EBFF1E%21106&cid=20874D8228EBFF1E, and put it in the PERD folder.
+    - step 2: download the example data (example-Roadmap-data-netopen.RData,example-CMAP-data-PERD.RData) from https://onedrive.live.com/?id=20874D8228EBFF1E%21106&cid=20874D8228EBFF1E, and put it in PERD folder.
 
     Dependencies of DeepDRK includes the following: 
 
@@ -34,7 +34,7 @@ Regulatory elements are hypothezied to play an important role in individual resp
 
 2. Preparation of the input files
 
-PERD applies a computational model, NetOpen, to predict the openness value for regulatory elements before/after drug treatment, then treats the regulatory elements that display the significantly different openness value after drug treatment as the drug responsive elements. The training data for build the NetOpen model came from RNA-seq and DNase-seq data in ENCODE 167 cells, which can be download from [ENCODE-training-data](https://github.com/WeiqiangZhou/BIRD-data/releases/download/v3.0/BIRD_data_ENCODE.zip). Put the RNA_data and DNase_data in PERD folder. The nearby genes for enhancers came form GeneCard sub-package GeenHancer (GeneHancer_version_4_4), which can be find in PERD repository. The TFs that are located in the enhancer region came from ENCODE Chip-seq data and were summarized in [tfbd_info](https://onedrive.live.com/?id=20874D8228EBFF1E%21106&cid=20874D8228EBFF1E)
+PERD applies a computational model, NetOpen, to predict the openness value for regulatory elements before/after drug treatment, then treats the regulatory elements that display the significantly different openness value after drug treatment as the drug responsive elements. The training data for build the NetOpen model came from RNA-seq and DNase-seq data in ENCODE 167 cells, which can be download from [ENCODE-training-data](https://github.com/WeiqiangZhou/BIRD-data/releases/download/v3.0/BIRD_data_ENCODE.zip). Put the RNA_data and DNase_data in PERD folder. The nearby genes for enhancers came form GeneCard sub-package GeenHancer (GeneHancer_version_4_4), which can be find in PERD repository. The TFs that are located in the enhancer region came from ENCODE Chip-seq data and were summarized in [tfbs_info](https://onedrive.live.com/?id=20874D8228EBFF1E%21106&cid=20874D8228EBFF1E). Put all these files in PERD folder.
     
    - Preparing training data
     
@@ -48,14 +48,14 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     > RNAdata.gene<-gene_symbol$SYMBOL[match(ensembleIDs,gene_symbol$ENSEMBL)]
     > rownames(RNAdata_trn)<-RNAdata.gene
     
-    > GeneHancer_version_4_4 <- read_excel("~/Documents/Drug responsive regulator elements/GeneHancer/GeneHancer_version_4-4.xlsx")
+    > library(readxl)
+    > GeneHancer_version_4_4 <- read_excel("~/PERD/GeneHancer_version_4-4.xlsx")
     > A<-strsplit(GeneHancer_version_4_4$attributes,";")
     > enhancer_gene_list<-lapply(1:nrow(GeneHancer_version_4_4),function(x) sapply(seq(2,length(A[[x]]),2),function(y) substr(A[[x]][y],16,nchar(A[[x]][y]))))
     > names(enhancer_gene_list)<-paste(GeneHancer_version_4_4$chrom,paste(GeneHancer_version_4_4$start,GeneHancer_version_4_4$end,sep = "-"),sep = ":")
 
     > enhancer.withOpen.lab<-lapply(1:nrow(GeneHancer_version_4_4),function(x) which(DNase_167_cells$chromosome == GeneHancer_version_4_4$chrom[x] & DNase_167_cells$start>=GeneHancer_version_4_4$start[x] & DNase_167_cells$end<=GeneHancer_version_4_4$end[x]))
     > len<-sapply(1:length(enhancer.withOpen.lab),function(x) length(enhancer.withOpen.lab[[x]]))
-    > GeneHancer_info<-GeneHancer_version_4_4[which(len!=0),]
     > enhancer.withOpen.lab1<-enhancer.withOpen.lab[which(len!=0)]
     #prepare the openness for enhancers in GeneHancer
     > DNase_data<-data.matrix(DNase_167_cells[,-c(1,2,3)])
@@ -75,9 +75,7 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     # preparing the binding TF list
     # The example TFBS information cames from ENCODE chip-seq data, which can be obtained in PERD repository
     > library(readr)
-    > tfbsInfo <- read_delim("~/Documents/openness/human/tfbsregion/tfbsInfo.txt", 
-                       +     "\t", escape_double = FALSE, col_names = FALSE, 
-                       +     trim_ws = TRUE)
+    > tfbsInfo <- read_delim("~/PERD/tfbsInfo.txt",  "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
     > tfbs_info<-tfbsInfo[-c(1,2),]
     > TFgene<-sapply(1:length(strsplit(tfbs_info$description," ")),function(x) strsplit(tfbs_info$description," ")[[x]][1])
     > enhancer.withOpen.TFlab<-lapply(1:nrow(enhancer.withOpen.openness),function(x) which(tfbs_info$chrom==GeneHancer_info$chrom[x] & tfbs_info$start>=GeneHancer_info$start[x] & tfbs_info$end<=GeneHancer_info$end[x]))
@@ -99,12 +97,12 @@ Usage example:
     
     # using NetOpen to predict the enhancers' openness value
     > load("~/PERD/example-Roadmap-data-netopen.RData") #load the training RData
-    > source('~/DeepDRK/netopen.R')
+    > source('~/PERD/netopen.R')
     > preEopen<-netopen(enhancer.withOpen.TG.list,enhancer.withOpen.TF.list,enhancer.withOpen.openness.train2,RNAdata.train,RNAdata.test)
     
     # using PERD to predict drug responsive enhancers
     > load("~/PERD/example-CMAP-data-PERD.RData") #load the training RData
-    > source('~/DeepDRK/perd.R')
+    > source('~/PERD/perd.R')
     > diffEn<-perd(enhancerGeneList_withTGexp_test2,enhancerList_withTGexp_TFexp_test2,enhancer.withOpen.openness.train1,RNAdata,drug_with10_binary_GEmat,drug_with10_binary_instance_info)
 
 
