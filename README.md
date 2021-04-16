@@ -55,7 +55,9 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     > names(enhancer_gene_list)<-paste(GeneHancer_version_4_4$chrom,paste(GeneHancer_version_4_4$start,GeneHancer_version_4_4$end,sep = "-"),sep = ":")
 
     > enhancer.withOpen.lab<-lapply(1:nrow(GeneHancer_version_4_4),function(x) which(DNase_167_cells$chromosome == GeneHancer_version_4_4$chrom[x] & DNase_167_cells$start>=GeneHancer_version_4_4$start[x] & DNase_167_cells$end<=GeneHancer_version_4_4$end[x]))
+    > names(enhancer.withOpen.lab)<-names(enhancer_gene_list)
     > len<-sapply(1:length(enhancer.withOpen.lab),function(x) length(enhancer.withOpen.lab[[x]]))
+    > GeneHancerWithOpen_info<-GeneHancer_version_4_4[which(len!=0),]
     > enhancer.withOpen.lab1<-enhancer.withOpen.lab[which(len!=0)]
     #prepare the openness for enhancers in GeneHancer
     > DNase_data<-data.matrix(DNase_167_cells[,-c(1,2,3)])
@@ -68,7 +70,7 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     rm(m)
     #cat(i,"\n")
     }
-    > rownames(enhancer.withOpen.openness)<-paste(GeneHancer_info$chrom,paste(GeneHancer_info$start,GeneHancer_info$end,sep = "-"),sep = ":")
+    > rownames(enhancer.withOpen.openness)<-names(enhancer.withOpen.lab1)
     
     # prepare the target gene list
     > enhancer_gene_list_open<-enhancer_gene_list[rownames(enhancer.withOpen.openness)]
@@ -77,16 +79,16 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     > library(readr)
     > tfbsInfo <- read_delim("~/PERD/tfbsInfo.txt",  "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
     > tfbs_info<-tfbsInfo[-c(1,2),]
-    > TFgene<-sapply(1:length(strsplit(tfbs_info$description," ")),function(x) strsplit(tfbs_info$description," ")[[x]][1])
-    > enhancer.withOpen.TFlab<-lapply(1:nrow(enhancer.withOpen.openness),function(x) which(tfbs_info$chrom==GeneHancer_info$chrom[x] & tfbs_info$start>=GeneHancer_info$start[x] & tfbs_info$end<=GeneHancer_info$end[x]))
+    > colnames(tfbs_info)<-tfbsInfo[2,]
+    > A<-strsplit(tfbs_info$description," ");TFgene<-sapply(1:length(A),function(x) A[[x]][1])
+    > enhancer.withOpen.TFlab<-lapply(1:nrow(enhancer.withOpen.openness),function(x) which(tfbs_info$chrom==GeneHancerWithOpen_info$chrom[x] & tfbs_info$start>=GeneHancerWithOpen_info$start[x] & tfbs_info$end<=GeneHancerWithOpen_info$end[x]))
     > len.t<-sapply(1:length(enhancer.withOpen.TFlab),function(x) length(enhancer.withOpen.TFlab[[x]]))
     > enhancer.withOpen.TFlab1<-enhancer.withOpen.TFlab[which(len.t!=0)]
     > GeneHancer_info1<-GeneHancer_info[which(len.t!=0),]
     > enhancer.withOpen.lab2<-enhancer.withOpen.lab1[which(len.t!=0)]
     > enhancer.withOpen.TG.list<-enhancer_gene_list[which(len.t!=0)]
     > enhancer.withOpen.openness1<-enhancer.withOpen.openness[which(len.t!=0),]
-    > enhancer.withOpen.TFgene<-lapply(1:length(enhancer.withOpen.lab2),function(x) unique(TFgene[enhancer.withOpen.TFlab1[[x]]]))
-    > enhancer.withOpen.TF.list<-lapply(1:length(enhancer.withOpen.lab2),function(x) intersect(enhancer.withOpen.TFgene[[x]],rownames(RNAdata)))
+    > enhancer.withOpen.TF.list<-lapply(1:length(enhancer.withOpen.lab2),function(x) unique(TFgene[enhancer.withOpen.TFlab1[[x]]]))
 
 
 3. Running PERD
