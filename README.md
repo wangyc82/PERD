@@ -42,7 +42,8 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     > RNA_167_cells <- readRDS("~/PERD/ENCODE-training-data/RNA_data_167_cells.rds")
     > library("OrganismDbi")
     > library("org.Hs.eg.db")
-    > ensembleIDs<-sapply(1:length(strsplit(rownames(RNA_167_cells),"[.]")),function(x) strsplit(rownames(RNA_167_cells),"[.]")[[x]][1])
+    > A<-strsplit(rownames(RNA_167_cells),"[.]")
+    > ensembleIDs<-sapply(1:length(A),function(x) A[[x]][1])
     > gene_symbol <- select(org.Hs.eg.db,keys = ensembleIDs,columns = "SYMBOL",keytype = "ENSEMBL")
     > RNAdata_trn<-RNA_167_cells
     > RNAdata.gene<-gene_symbol$SYMBOL[match(ensembleIDs,gene_symbol$ENSEMBL)]
