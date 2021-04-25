@@ -84,11 +84,10 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
     > enhancer.withOpen.TFlab<-lapply(1:nrow(enhancer.withOpen.openness),function(x) which(tfbs_info$chrom==GeneHancerWithOpen_info$chrom[x] & tfbs_info$start>=GeneHancerWithOpen_info$start[x] & tfbs_info$end<=GeneHancerWithOpen_info$end[x]))
     > len.t<-sapply(1:length(enhancer.withOpen.TFlab),function(x) length(enhancer.withOpen.TFlab[[x]]))
     > enhancer.withOpen.TFlab1<-enhancer.withOpen.TFlab[which(len.t!=0)]
-    > GeneHancer_info1<-GeneHancer_info[which(len.t!=0),]
     > enhancer.withOpen.lab2<-enhancer.withOpen.lab1[which(len.t!=0)]
-    > enhancer.withOpen.TG.list<-enhancer_gene_list[which(len.t!=0)]
+    > enhancer.withOpen.TG.list<-enhancer_gene_list_open[which(len.t!=0)]
     > enhancer.withOpen.openness1<-enhancer.withOpen.openness[which(len.t!=0),]
-    > enhancer.withOpen.TF.list<-lapply(1:length(enhancer.withOpen.lab2),function(x) unique(TFgene[enhancer.withOpen.TFlab1[[x]]]))
+    > enhancer.withOpen.TF.list<-lapply(1:length(enhancer.withOpen.lab2),function(x) unique(TFgene[enhancer.withOpen.lab2[[x]]]))
 
 
 3. Running PERD
