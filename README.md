@@ -93,7 +93,7 @@ PERD applies a computational model, NetOpen, to predict the openness value for r
 
 3. Running PERD
 
-The main function of DeepDRK is DeepDRKpredictor.R. Get your input files prepared, and run it like this:
+Get your input files prepared, and run perd and netopen like this:
 
 Usage example:
     
